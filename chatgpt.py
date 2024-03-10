@@ -3,21 +3,32 @@ from pprint import pprint
 from openai import OpenAI
 import os
 
-key = "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"
-key2 = "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"
+from settings import openapi_key, prompt
 
 
-def prediction_openai_handler(cards: str, question: str):
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", key2))
+def prediction(layout=None, question=None):
+    cards = ['two cups', 'straight', 'fool']
 
-    final_question = f"Карты: {cards}. Вопрос: {question}?"
+    for num, card in enumerate(cards):
+        match num:
+            case 0:
+                print(f"first openai: {card}")
+            case 1:
+                print(f"second openai: {card}")
+            case 2:
+                print(f"third openai: {card}")
+
+    print("final msg")
+
+
+def prediction_openai_handler(cards: str, question: str) -> str:
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", openapi_key))
+
+    formatted_question = f"Карты: {cards}. Вопрос: {question}?"
 
     messages = [{"role": "system",
-                 "content": "Ты гадалка цыганка, которая гадает по картам Таро. Твоя речь настолько циганская, насколько это возможно. Отвечаешь на русском с использованием жаргонных слов"
-                            "Я говорю какие карты мне выпали и задаю вопрос. Ты говоришь мне расклад по трем картам Таро про этот вопрос."
-                            " Ответ состоит из только из четырех абзацев: 1 карта - карта прошлого, 2 карта - карта настоящего, "
-                            "3 карта - карта будущего, итоговое толкование расклада. Пиши названия карт на русском. Разделяй каждый абзац словом '=SEP=' "},
-                {"role": "user", "content": final_question}]
+                 "content": prompt},
+                {"role": "user", "content": formatted_question}]
 
     completion = client.chat.completions.create(model="gpt-3.5-turbo",
                                                 messages=messages)
@@ -34,11 +45,14 @@ def get_prediction(layout: list[dict], question: str):
 
     prediction = prediction_openai_handler(cards, question).split("=SEP=")
 
-    for card, pred in zip(layout, prediction[1:]):
-        card['description'] = pred
-        # print(prediction)
+    if len(prediction) > len(layout) + 1:
+        for card, pred in zip(layout, prediction[1:]):
+            card['description'] = pred
+    else:
+        for card, pred in zip(layout, prediction):
+            card['description'] = pred
 
-    # Keeping last message from chat GPT in first element of layout
+    # Keeping the last message from chat GPT in the first element of layout
     layout[0]['final_prediction'] = prediction[-1:]
 
-# prediction_openai_handler()
+# prediction()
