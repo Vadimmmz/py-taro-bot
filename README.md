@@ -32,6 +32,7 @@ echo OPENAPI_MODEL="gpt-3.5-turbo" > .env && echo 'OPENAI_API_KEY="PUT_OPENAI_AP
 # Making a service for bot
 sudo cp /home/py-taro-bot/py-taro-bot.service /lib/systemd/system/py-taro-bot.service
 
+# Run the service
 sudo systemctl enable py-taro-bot.service
 sudo systemctl start py-taro-bot.service
 ```
