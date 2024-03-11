@@ -89,7 +89,8 @@ def send_cards(chat_id, card_list, index, user_id):
         bot.edit_message_reply_markup(chat_id=chat_id, message_id=msg.message_id, reply_markup=markup)
     else:
 
-        bot.send_message(chat_id, card_list[0].get('final_prediction', bot_message_start))
+        bot.send_message(chat_id, card_list[0].get('final_prediction'))
+        bot.send_message(chat_id, bot_message_start)
         delete_session(user_id)
         if card_list[0].get('final_prediction', False):
             del card_list[0]['final_prediction']
@@ -113,8 +114,6 @@ def get_answer(message):
         bot.send_message(message.chat.id, bot_message_start)
 
 
-
-# Обработчик нажатия на кнопку "Далее"
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     if call.data:
@@ -135,6 +134,5 @@ def callback_handler(call):
             else:
                 bot.send_message(call.message.chat.id, bot_message_start)
 
-
-# Запуск бота
+# run bot
 bot.polling()
