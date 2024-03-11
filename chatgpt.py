@@ -1,4 +1,3 @@
-from pprint import pprint
 from openai import OpenAI
 import os
 from settings import prompt_1, prompt_2, prompt_3, prompt_final
@@ -30,8 +29,6 @@ def prediction(layout: list[dict], question: str) -> None:
 
     layout[0]['final_prediction'] = openai_handler(client=client, messages=messages, prompt=prompt_final)
 
-    pprint(layout)
-
 
 def openai_handler(client: OpenAI, messages: list[dict], prompt: str) -> str:
     """
@@ -40,7 +37,7 @@ def openai_handler(client: OpenAI, messages: list[dict], prompt: str) -> str:
     """
 
     messages.append({"role": "user", "content": prompt})
-    completion = client.chat.completions.create(model="gpt-3.5-turbo",
+    completion = client.chat.completions.create(model=os.getenv("OPENAPI_MODEL"),
                                                 messages=messages)
     chat_response = completion.choices[0].message.content
     messages.append({"role": "assistant", "content": chat_response})

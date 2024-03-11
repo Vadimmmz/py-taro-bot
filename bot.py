@@ -19,7 +19,6 @@ def get_session(user_id):
 def delete_session(user_id):
     if int(user_id) in sessions.keys():
         del sessions[int(user_id)]
-        print("DELETED")
 
 
 @bot.message_handler(commands=['start'])
@@ -66,18 +65,14 @@ def send_cards(chat_id, card_list, index, user_id):
 
 
 @bot.message_handler(content_types=["text"])
-def get_answer(message):
+def question_handler(message):
     if sessions.get(message.from_user.id):
-        print(message.text)
-
         bot.send_message(message.chat.id, BOT_MSG_AWAIT.replace("$NAME", message.from_user.first_name))
 
         prediction(layout=sessions[message.from_user.id], question=message.text)
-        # Mock
-        # sessions[message.from_user.id] = mock_layout
 
         send_cards(chat_id=message.chat.id, card_list=get_session(message.from_user.id),
-               index=0, user_id=message.from_user.id)
+                   index=0, user_id=message.from_user.id)
 
     else:
         bot.send_message(message.chat.id, BOT_MSG_START)
@@ -89,12 +84,10 @@ def callback_handler(call):
         if call.data.startswith("start"):
             bot.send_message(call.message.chat.id, BOT_MSG_ASKME)
             call_data = call.data.split(" ")
-            add_session(int(call_data[1]))
-            print(f"{get_session(int(call_data[1]))}")
+            add_session(call_data[1])
 
         else:
             call_data = call.data.split(" ")
-            print(call.data)
 
             if get_session(call_data[1]):
                 send_cards(call.message.chat.id, get_session(call_data[1]), int(call_data[0]) + 1,
@@ -102,6 +95,7 @@ def callback_handler(call):
                 bot.answer_callback_query(call.id)
             else:
                 bot.send_message(call.message.chat.id, BOT_MSG_START)
+
 
 # run bot
 bot.polling()
