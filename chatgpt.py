@@ -3,7 +3,7 @@ from pprint import pprint
 from openai import OpenAI
 import os
 
-from settings import openapi_key, prompt, prompt_past, prompt_present, prompt_future, prompt_final
+from settings import openapi_key, prompt_past, prompt_present, prompt_future, prompt_final
 from settings import test_layout
 
 
@@ -23,19 +23,20 @@ def prediction(layout: list[dict], question: str) -> None:
             case 0:
                 prompt_past = prompt_past.replace("$CARD", card['name']).replace("$ASK", question)
                 card['prediction'] = openai_handler(client=client, messages=messages, prompt=prompt_past)
-                print(card['prediction'])
 
             case 1:
                 prompt_present = prompt_present.replace("$CARD", card['name'])
                 card['prediction'] = openai_handler(client=client, messages=messages, prompt=prompt_present)
-                print(card['prediction'])
+
             case 2:
                 prompt_future = prompt_future.replace("$CARD", card['name'])
                 card['prediction'] = openai_handler(client=client, messages=messages, prompt=prompt_future)
-                print(card['prediction'])
+
 
     layout[0]['final_prediction'] = openai_handler(client=client, messages=messages, prompt=prompt_final)
-    print(layout[0]['final_prediction'])
+
+    pprint(layout)
+
 
 
 def openai_handler(client: OpenAI, messages: list[dict], prompt: str) -> str:
