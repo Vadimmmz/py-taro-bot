@@ -4,7 +4,7 @@ from pprint import pprint
 import telebot
 from telebot import types
 from card_tools import make_layout
-from chatgpt import get_prediction
+from chatgpt import prediction
 from settings import bot_message_hello
 
 # Замените 'YOUR_BOT_TOKEN' на токен вашего бота
@@ -40,8 +40,10 @@ class Session():
 # Добавление нового сеанса
 def add_session(user_id):
     sessions[user_id]: list[dict] = make_layout()
-    get_prediction(sessions[user_id], question="Как долго мне ждать когда мне привезут еду с магазина?")
-    pprint(sessions[user_id])
+
+    prediction(layout=sessions[user_id], question="Закончу ли я сегодня работать с радостью на душе?")
+    # get_prediction(sessions[user_id], question="Как долго мне ждать когда мне привезут еду с магазина?")
+    # pprint(sessions[user_id])
 
 
 # Получение информации о сеансе
@@ -55,14 +57,25 @@ def delete_session(user_id):
         del sessions[user_id]
 
 
+def send_start_message(chat_id, user_id, name: str):
+    with open("images/cat.png", 'rb') as f:
+        photo = f.read()
+
+    # TODO put reply markup right into this func parametres
+    msg = bot.send_photo(chat_id, photo, caption=bot_message_hello.replace("name", name))
+
+    # Создание кнопки "Далее"
+    markup = types.InlineKeyboardMarkup()
+    btn_next = types.InlineKeyboardButton('Гадать', callback_data=f"start {user_id} {chat_id}")
+    markup.add(btn_next)
+
+    # Привязка кнопки к сообщению
+    bot.edit_message_reply_markup(chat_id=chat_id, message_id=msg.message_id, reply_markup=markup)
+
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, bot_message_hello.replace("name", message.from_user.first_name))
-
-    add_session(message.from_user.id)
-
-    send_cards(message.chat.id, get_session(message.from_user.id), 0, message.from_user.id)
+    send_start_message(chat_id=message.chat.id, name=message.from_user.first_name, user_id=message.from_user.id)
 
 
 # Функция отправки предсказания пользователю
@@ -74,7 +87,7 @@ def send_cards(chat_id, card_list, index, user_id):
         with open(card['image'], 'rb') as f:
             photo = f.read()
 
-        msg = bot.send_photo(chat_id, photo, caption=card['description'])
+        msg = bot.send_photo(chat_id, photo, caption=card['prediction'])
 
         # Создание кнопки "Далее"
         markup = types.InlineKeyboardMarkup()
@@ -84,9 +97,9 @@ def send_cards(chat_id, card_list, index, user_id):
         # Привязка кнопки к сообщению
         bot.edit_message_reply_markup(chat_id=chat_id, message_id=msg.message_id, reply_markup=markup)
     else:
-        delete_session(user_id)
-        bot.send_message(chat_id, card_list[0].get('final_prediction', 'Введите /start'))
 
+        bot.send_message(chat_id, card_list[0].get('final_prediction', 'Введите /start'))
+        delete_session(user_id)
         if card_list[0].get('final_prediction', False):
             del card_list[0]['final_prediction']
 
@@ -104,10 +117,24 @@ def get_answer(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     if call.data:
-        call_data = call.data.split(" ")
-        print(call.data)
-        send_cards(call.message.chat.id, get_session(int(call_data[1])), int(call_data[0]) + 1, user_id=call_data[1])
-        bot.answer_callback_query(call.id)
+        if call.data.startswith("start"):
+            bot.send_message(call.message.chat.id, 'Отлично! Напишите на что будем гадать?')
+            call_data = call.data.split(" ")
+            add_session(call_data[1])
+            print(f"{get_session(call_data[1])}")
+
+            send_cards(chat_id=call_data[2], card_list=get_session(call_data[1]),
+                       index=0, user_id=call_data[1])
+        else:
+            call_data = call.data.split(" ")
+            print(call.data)
+
+            if get_session(call_data[1]):
+                send_cards(call.message.chat.id, get_session(call_data[1]), int(call_data[0]) + 1,
+                           user_id=call_data[1])
+                bot.answer_callback_query(call.id)
+            else:
+                bot.send_message(call.message.chat.id, 'Введите чтобы начать гадать! /start')
 
 
 # Запуск бота
