@@ -1,3 +1,21 @@
+import json
+
+
+def save_dict_to_json_file(data, filename):
+    """
+    Преобразует словарь в формат JSON и сохраняет его в файл.
+
+    Аргументы:
+    data: dict. Словарь для сохранения в формате JSON.
+    filename: str. Путь к файлу, в который будет сохранён JSON.
+
+    Возвращает:
+    None
+    """
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4)
+
+
 card_deck = [{
     'arcana': 'Major',
     'name': 'The Fool',
@@ -468,3 +486,5 @@ card_deck = [{
         'image': "images/taro/77.jpg",
     }
 ]
+
+save_dict_to_json_file(card_deck, 'card_deck.json')

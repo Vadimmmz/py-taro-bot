@@ -1,38 +1,11 @@
-from datetime import time
-from pprint import pprint
-
 import telebot
 from telebot import types
 from card_tools import make_layout
 from chatgpt import prediction
-from settings import bot_message_hello, bot_message_await, mock_layout, telegram_token, bot_message_askme, \
-    bot_message_start
+from settings import BOT_MSG_HELLO, BOT_MSG_AWAIT, TELEGRAM_TOKEN, BOT_MSG_ASKME, BOT_MSG_START
 
-TOKEN = telegram_token
-bot = telebot.TeleBot(TOKEN)
-
+bot = telebot.TeleBot(TELEGRAM_TOKEN)
 sessions = {}
-
-
-class Session():
-    """
-        Keeps user session info required for prediction
-
-    """
-
-    def __init__(self, user_id, layout: list[dict]):
-        self.user_id = user_id
-        self.cards = layout
-
-        self.prediction_in_process = True
-
-        self.first_prediction = None
-        self.second_prediction = None
-        self.third_prediction = None
-        self.final_prediction = None
-
-    def get_card(self) -> dict:
-        return self.cards.pop(0)
 
 
 def add_session(user_id):
@@ -49,28 +22,23 @@ def delete_session(user_id):
         print("DELETED")
 
 
-def send_start_message(chat_id, user_id, name: str):
+@bot.message_handler(commands=['start'])
+def start(message):
     with open("images/cat.png", 'rb') as f:
         photo = f.read()
 
-    # TODO put reply markup right into this func parametres
-    msg = bot.send_photo(chat_id, photo, caption=bot_message_hello.replace("$NAME", name))
+    msg = bot.send_photo(message.chat.id, photo,
+                         caption=BOT_MSG_HELLO.replace("$NAME", message.from_user.first_name))
 
-    # Создание кнопки "Далее"
+    # The "Predict" button making
     markup = types.InlineKeyboardMarkup()
-    btn_next = types.InlineKeyboardButton('Гадать', callback_data=f"start {user_id} {chat_id}")
+    btn_next = types.InlineKeyboardButton('Гадать', callback_data=f"start {message.from_user.id} {message.chat.id}")
     markup.add(btn_next)
 
-    # Привязка кнопки к сообщению
-    bot.edit_message_reply_markup(chat_id=chat_id, message_id=msg.message_id, reply_markup=markup)
-
-# Обработчик команды /start
-@bot.message_handler(commands=['start'])
-def start(message):
-    send_start_message(chat_id=message.chat.id, name=message.from_user.first_name, user_id=message.from_user.id)
+    # Binding button to a message
+    bot.edit_message_reply_markup(chat_id=message.chat.id, message_id=msg.message_id, reply_markup=markup)
 
 
-# Функция отправки предсказания пользователю
 def send_cards(chat_id, card_list, index, user_id):
     if index < len(card_list):
         card = card_list[index]
@@ -80,17 +48,18 @@ def send_cards(chat_id, card_list, index, user_id):
 
         msg = bot.send_photo(chat_id, photo, caption=card['prediction'])
 
-        # Создание кнопки "Далее"
+        # The "Next" button making
         markup = types.InlineKeyboardMarkup()
         btn_next = types.InlineKeyboardButton('Далее', callback_data=f"{index} {user_id}")
         markup.add(btn_next)
 
-        # Привязка кнопки к сообщению
+        # Binding button to a message
         bot.edit_message_reply_markup(chat_id=chat_id, message_id=msg.message_id, reply_markup=markup)
     else:
 
         bot.send_message(chat_id, card_list[0].get('final_prediction'))
-        bot.send_message(chat_id, bot_message_start)
+        bot.send_message(chat_id, BOT_MSG_START)
+
         delete_session(user_id)
         if card_list[0].get('final_prediction', False):
             del card_list[0]['final_prediction']
@@ -101,24 +70,24 @@ def get_answer(message):
     if sessions.get(message.from_user.id):
         print(message.text)
 
-        bot.send_message(message.chat.id, bot_message_await.replace("$NAME", message.from_user.first_name))
+        bot.send_message(message.chat.id, BOT_MSG_AWAIT.replace("$NAME", message.from_user.first_name))
 
-        # prediction(layout=sessions[message.from_user.id], question=message.text)
+        prediction(layout=sessions[message.from_user.id], question=message.text)
         # Mock
-        sessions[message.from_user.id] = mock_layout
+        # sessions[message.from_user.id] = mock_layout
 
         send_cards(chat_id=message.chat.id, card_list=get_session(message.from_user.id),
                index=0, user_id=message.from_user.id)
 
     else:
-        bot.send_message(message.chat.id, bot_message_start)
+        bot.send_message(message.chat.id, BOT_MSG_START)
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     if call.data:
         if call.data.startswith("start"):
-            bot.send_message(call.message.chat.id, bot_message_askme)
+            bot.send_message(call.message.chat.id, BOT_MSG_ASKME)
             call_data = call.data.split(" ")
             add_session(int(call_data[1]))
             print(f"{get_session(int(call_data[1]))}")
@@ -132,7 +101,7 @@ def callback_handler(call):
                            user_id=call_data[1])
                 bot.answer_callback_query(call.id)
             else:
-                bot.send_message(call.message.chat.id, bot_message_start)
+                bot.send_message(call.message.chat.id, BOT_MSG_START)
 
 # run bot
 bot.polling()

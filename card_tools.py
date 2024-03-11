@@ -1,7 +1,8 @@
-from pprint import pprint
-
-from card_deck import card_deck
 import random
+import json
+
+with open('card_deck.json', 'r', encoding='utf-8') as f:
+    card_deck = json.load(f)
 
 
 def make_layout() -> list[dict]:
