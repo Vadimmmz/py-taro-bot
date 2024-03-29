@@ -27,10 +27,10 @@ pip install -r requirements.txt
 deactivate
 
 # Add .env file
-echo OPENAI_MODEL="gpt-3.5-turbo" > .env && echo 'OPENAI_API_KEY="PUT_OPENAI_API_KEY_HERE"' >> .env && echo 'TELEGRAM_TOKEN="PUT_TELEGRAM_TOKEN_HERE"' >> .env
+echo OPENAPI_MODEL="gpt-3.5-turbo" > .env && echo 'OPENAI_API_KEY="PUT_OPENAI_API_KEY_HERE"' >> .env && echo 'TELEGRAM_TOKEN="PUT_TELEGRAM_TOKEN_HERE"' >> .env
 
 # Making a service for bot
-sudo cp /home/py-taro-bot/py-taro-bot.service /lib/systemd/system/py-taro-bot.service
+sudo cp /home/py-taro-bot/py-taro-bot.service /etc/systemd/system/py-taro-bot.service
 
 # Run the service
 sudo systemctl enable py-taro-bot.service
